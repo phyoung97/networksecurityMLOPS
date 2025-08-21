@@ -6,8 +6,8 @@ certifi
 pymongo[srv]==4.14
 pymongo
 scikit-learn
-#dill
+#dill not needed in this case
 pickle
-pyaml
+pyyaml
 
 ##-e. 
