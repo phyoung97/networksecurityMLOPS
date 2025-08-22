@@ -6,6 +6,9 @@ import numpy as np
 #import dill
 import pickle
 
+from sklearn.model_selection import GridSearchCV
+from sklearn.metrics import accuracy_score
+
 
 def read_yaml_file(file_path: str) -> dict:
     try:
@@ -43,6 +46,33 @@ def save_numpy_array(file_path: str , array: np.array):
         raise NetworkSecurityException(e,sys) from e
     
 
+def load_numpy_array(file_path: str):
+    """
+    Load a NumPy array from .npy or .npz.
+    - For .npy: returns the array.
+    - For .npz: returns the single array if only one is stored; otherwise a tuple of arrays.
+    """
+    try:
+        if not os.path.exists(file_path):
+            raise FileNotFoundError(f"NumPy file not found: {file_path}")
+
+        ext = os.path.splitext(file_path)[1].lower()
+        if ext == ".npy":
+            # np.load on a file path returns the array directly
+            return np.load(file_path, allow_pickle=False)
+        elif ext == ".npz":
+            with np.load(file_path, allow_pickle=False) as data:
+                keys = list(data.keys())
+                if len(keys) == 1:
+                    return data[keys[0]]
+                return tuple(data[k] for k in keys)
+        else:
+            raise ValueError(f"Unsupported file extension {ext}. Use .npy or .npz.")
+    except Exception as e:
+        raise NetworkSecurityException(e, sys) from e
+    
+
+
 def save_object(file_path: str, obj: object) -> None:
     try:
         logging.info("Entered the save_object method of MainUtils class")
@@ -52,3 +82,43 @@ def save_object(file_path: str, obj: object) -> None:
         logging.info("Excited the save_object method of MainUtils class")
     except Exception as e:
         raise NetworkSecurityException(e,sys) from e
+    
+
+def load_object(file_path: str, ) -> object:
+    try:
+        if not os.path.exists(file_path):
+            raise Exception(f"The file: {file_path} does not exist")
+        with open(file_path, "rb") as file_obj:
+            print(file_obj)
+            return pickle.load(file_obj)
+    except Exception as e:
+        raise NetworkSecurityException(e,sys) from e
+    
+
+def evaluate_models(X_train, y_train, X_test, y_test, models, param):
+    try:
+        report = {}
+
+        for i in range(len(list(models))):
+            model = list(models.values())[i]
+            para=param[list(models.keys())[i]]
+
+            gs= GridSearchCV(model, para, cv=3)
+            gs.fit(X_train,y_train)
+
+            model.set_params(**gs.best_params_)
+            model.fit(X_train, y_train)
+
+            y_train_pred = model.predict(X_train)
+
+            y_test_pred = model.predict(X_test)
+
+            train_model_score = accuracy_score(y_train, y_train_pred)
+
+            test_model_score = accuracy_score(y_test, y_test_pred)
+
+            report[list(models.keys())[i]] = test_model_score
+
+        return report
+    except Exception as e:
+        raise NetworkSecurityException(e,sys)
