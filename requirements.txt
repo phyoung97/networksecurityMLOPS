@@ -4,10 +4,8 @@ numpy
 pymongo
 certifi
 pymongo[srv]==4.14
-pymongo
 scikit-learn
-#dill not needed in this case
-pickle
-pyyaml
+PyYAML
+mlflow==3.3.1
 
 ##-e. 

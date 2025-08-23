@@ -23,6 +23,10 @@ from sklearn.ensemble import (
     RandomForestClassifier
 )
 
+import mlflow, mlflow.sklearn
+
+
+
 def _safe_load_numpy(path: str):
     try:
         from networksecurity.utils.main_utils.utils import load_numpy_array
@@ -42,6 +46,19 @@ class ModelTrainer:
             self.data_transformation_artifact=data_transformation_artifact
         except Exception as e:
             raise NetworkSecurityException(e,sys)
+        
+    def track_mlflow(self,best_model,classifiactionmetric):
+            with mlflow.start_run():
+                f1_score=classifiactionmetric.f1_score
+                precision_score=classifiactionmetric.precision_score
+                recall_score=classifiactionmetric.recall_score
+
+                mlflow.log_metric("f1_score", f1_score)
+                mlflow.log_metric("precision_score", precision_score)
+                mlflow.log_metric("recall score", recall_score)
+                mlflow.sklearn.log_model(best_model,"model")
+
+
         
 
     def train_model(self, X_train, y_train, X_test, y_test):
@@ -99,10 +116,15 @@ class ModelTrainer:
         classification_train_metric = get_classification_score(y_true=y_train, y_pred=y_train_pred)
         
         ##Function to track the flow
+        #Using MLFLOW
+
+        self.track_mlflow(best_model,classification_train_metric)
 
 
         y_test_pred = best_model.predict(X_test)
         classification_test_metric = get_classification_score(y_true=y_test, y_pred=y_test_pred)
+
+        self.track_mlflow(best_model,classification_test_metric)
 
         preprocessor = load_object(file_path=self.data_transformation_artifact.transformed_object_file_path)
 

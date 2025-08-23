@@ -1,0 +1,10 @@
+artifact_location: file:///C:/Users/payou/OneDrive/Desktop/NetworkSecurityMLOPS/mlruns/0/models/m-65fe96c26a8144b4a8f61e31a94432d6/artifacts
+creation_timestamp: 1755974233843
+experiment_id: '0'
+last_updated_timestamp: 1755974240083
+model_id: m-65fe96c26a8144b4a8f61e31a94432d6
+model_type: null
+name: model
+source_run_id: cefe8ec967ec4334a5ce5dfde9ecbc85
+status: 2
+status_message: null
