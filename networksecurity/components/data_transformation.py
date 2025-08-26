@@ -20,15 +20,18 @@ from networksecurity.utils.main_utils.utils import save_numpy_array, save_object
 
 
 class DataTransformation:
-    def __init__(self,  config: DataTransformationConfig,                     # FIX
-        data_ingestion_artifact: DataIngestionAtrifact,      # FIX (even if unused, good to have)
-        data_validation_artifact: DataValidationArtifact,):
+    def __init__(
+        self,
+        config: DataTransformationConfig,
+        data_validation_artifact: DataValidationArtifact,
+        data_ingestion_artifact: DataIngestionAtrifact,
+    ):
         try:
-            self.config: DataTransformationConfig = config                # FIX
-            self.data_ingestion_artifact: DataIngestionAtrifact = data_ingestion_artifact  # FIX
-            self.data_validation_artifact: DataValidationArtifact = data_validation_artifact
+            self.config = config
+            self.data_validation_artifact = data_validation_artifact
+            self.data_ingestion_artifact = data_ingestion_artifact
         except Exception as e:
-            raise NetworkSecurityException(e,sys)
+            raise NetworkSecurityException(e, sys)
         
     
     def get_data_transformer_object(self)-> Pipeline:
@@ -99,6 +102,11 @@ class DataTransformation:
             save_numpy_array(self.config.transformed_train_file_path, array=train_arr)   # FIX
             save_numpy_array(self.config.transformed_test_file_path, array=test_arr)     # FIX
             save_object(self.config.transformed_object_file_path, preprocessor_object)   # FIX
+
+            # Save model pkl file into the final model folder
+
+            save_object("final_model/preprocessor.pkl", preprocessor_object)
+
 
             # Prepare and RETURN artifact
             data_transformation_artifact = DataTransformationArtifact(
