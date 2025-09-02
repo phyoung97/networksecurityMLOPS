@@ -49,16 +49,46 @@ class ModelTrainer:
         except Exception as e:
             raise NetworkSecurityException(e,sys)
         
-    def track_mlflow(self,best_model,classifiactionmetric):
-            with mlflow.start_run():
-                f1_score=classifiactionmetric.f1_score
-                precision_score=classifiactionmetric.precision_score
-                recall_score=classifiactionmetric.recall_score
 
-                mlflow.log_metric("f1_score", f1_score)
-                mlflow.log_metric("precision_score", precision_score)
-                mlflow.log_metric("recall score", recall_score)
-                mlflow.sklearn.log_model(best_model,"model")
+        
+    
+    def track_mlflow(self, best_model, metrics: dict):
+        import os, tempfile
+        import mlflow
+        from mlflow.exceptions import RestException
+
+        mlflow.set_experiment("networksecurity")
+
+        with mlflow.start_run():
+            # Log metrics (cast defensively)
+            for k, v in (metrics or {}).items():
+                try:
+                    mlflow.log_metric(k, float(v))
+                except Exception:
+                    mlflow.log_param(f"metric_{k}_raw", str(v))
+
+            # Try standard path (may fail on DagsHub due to unsupported endpoint)
+            try:
+                import mlflow.sklearn
+                mlflow.sklearn.log_model(
+                    sk_model=best_model,
+                    artifact_path="model",   # keep artifact_path for broad compatibility
+                )
+
+            except Exception as e:
+                msg = str(e).lower()
+                if "unsupported endpoint" in msg or "createloggedmodel" in msg:
+                    # Fallback: save MLflow model locally, then upload the whole folder
+                    import mlflow.sklearn
+                    with tempfile.TemporaryDirectory() as td:
+                        local_dir = os.path.join(td, "model")
+                        mlflow.sklearn.save_model(
+                            sk_model=best_model,
+                            path=local_dir,
+                        )
+                        mlflow.log_artifacts(local_dir, artifact_path="model")
+                else:
+                    raise
 
 
         
@@ -120,13 +150,13 @@ class ModelTrainer:
         ##Function to track the flow
         #Using MLFLOW
 
-        self.track_mlflow(best_model,classification_train_metric)
+        self.track_mlflow(best_model, vars(classification_train_metric))
 
 
         y_test_pred = best_model.predict(X_test)
         classification_test_metric = get_classification_score(y_true=y_test, y_pred=y_test_pred)
 
-        self.track_mlflow(best_model,classification_test_metric)
+        self.track_mlflow(best_model,vars(classification_test_metric))
 
         preprocessor = load_object(file_path=self.data_transformation_artifact.transformed_object_file_path)
 
@@ -149,7 +179,7 @@ class ModelTrainer:
 
 
         
-    def initiant_model_trainer(self):
+    def initiate_model_trainer(self):
         try:
             # Resolve and load arrays
             train_path = self.data_transformation_artifact.transformed_train_file_path
